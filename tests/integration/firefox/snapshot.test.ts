@@ -330,12 +330,7 @@ describe('Snapshot Integration Tests', () => {
   });
 
   describe('form controls', () => {
-    const CONTROLS_PAGE =
-      'data:text/html,<label>Username <input id=user></label>' +
-      '<label>Password <input id=pass type=password value=secret></label>' +
-      '<label><input id=remember type=checkbox> Remember me</label>' +
-      '<label>Team <select id=team><option>Red</option><option>Blue</option></select></label>' +
-      '<label for=mail>Mail</label><input id=mail type=email>';
+    const CONTROLS_PAGE = fixtureUrl('form-controls.html');
 
     function lineOf(text: string, name: string): string | undefined {
       return text.split('\n').find((line) => line.includes(`"${name}"`));
