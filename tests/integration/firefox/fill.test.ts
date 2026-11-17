@@ -111,5 +111,20 @@ describe('fill_by_uid Integration Tests', () => {
       await expect(firefox.fillByUid(uid, 'Purple')).rejects.toThrow(/"Purple".*Red.*Green/);
       expect(await firefox.evaluate('document.getElementById("s").value')).toBe('1');
     }, 20000);
+
+    it('should replace the selection of a multiple select', async () => {
+      await firefox.navigate(
+        'data:text/html,<select id=m multiple><option selected>Red</option>' +
+          '<option selected>Green</option><option>Blue</option></select>'
+      );
+
+      await firefox.fillByUid(await uidOf('m'), 'Red');
+
+      expect(
+        await firefox.evaluate(
+          '[...document.getElementById("m").selectedOptions].map((o) => o.value)'
+        )
+      ).toEqual(['Red']);
+    }, 20000);
   });
 });

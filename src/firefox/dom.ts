@@ -298,8 +298,10 @@ export class DomInteractions {
         if (!option) {
           return options.map((o) => o.text.trim());
         }
-        if (!option.selected) {
-          option.selected = true;
+        if (options.some((o) => o.selected !== (o === option))) {
+          for (const o of options) {
+            o.selected = o === option;
+          }
           el.dispatchEvent(new Event('input', { bubbles: true }));
           el.dispatchEvent(new Event('change', { bubbles: true }));
         }
