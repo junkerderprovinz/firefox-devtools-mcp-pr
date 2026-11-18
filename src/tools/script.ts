@@ -10,6 +10,7 @@ import { saveOutput } from '../utils/save-output.js';
 import { defineModule, defineToolHandler, type ToolDefinition } from './module.js';
 import type { McpToolResponse } from '../types/common.js';
 import { BiDiTimeoutError } from '../utils/errors.js';
+import type { ResolvedElement } from '../firefox/snapshot/resolver.js';
 
 export const evaluateScriptTool = {
   name: 'evaluate_script',
@@ -27,7 +28,8 @@ export const evaluateScriptTool = {
       },
       args: {
         type: 'array',
-        description: 'UIDs to pass as function arguments',
+        description:
+          'UIDs to pass as function arguments, all from the same frame. With UIDs from an iframe, the function runs in that iframe.',
         items: {
           type: 'object',
           properties: {
@@ -80,10 +82,12 @@ export const handleEvaluateScript = defineToolHandler<typeof evaluateScriptTool>
 
     // Prepare arguments: resolve UIDs to references shared ids if provided
     const resolvedArgs: Script.LocalValue[] = [];
+    let context = firefox.getCurrentContextId();
     if (fnArgs && fnArgs.length > 0) {
       for (const arg of fnArgs) {
+        let resolved: ResolvedElement;
         try {
-          resolvedArgs.push(await firefox.resolveUidToElement(arg.uid));
+          resolved = await firefox.resolveUidToContextElement(arg.uid);
         } catch (error) {
           const errorMsg = (error as Error).message;
 
@@ -102,11 +106,19 @@ export const handleEvaluateScript = defineToolHandler<typeof evaluateScriptTool>
 
           throw new Error(`Failed to resolve UID "${arg.uid}": ${errorMsg}`);
         }
+        // An element can only be passed to a function running in the frame that holds it
+        if (resolvedArgs.length > 0 && resolved.context !== context) {
+          throw new Error(
+            `UID "${arg.uid}" is in a different frame than "${fnArgs[0]!.uid}". ` +
+              'Pass only UIDs from the same frame.'
+          );
+        }
+        context = resolved.context;
+        resolvedArgs.push(resolved.element);
       }
     }
 
     // Execute with resolved args (empty array if no args)
-    const context = firefox.getCurrentContextId();
     if (!context) {
       throw new Error('No active browsing context');
     }

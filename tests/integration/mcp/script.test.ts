@@ -50,6 +50,41 @@ mcpTest.describe('evaluate_script (MCP)', () => {
     expect(result.text).toContain('"clickBtn"');
   });
 
+  mcpTest.describe('iframes', () => {
+    async function snapshotUids(mcp: McpTestServer): Promise<{ top: string; frame: string }> {
+      await mcp.callTool('navigate_page', { url: fixtureUrl('frames.html') });
+      const snapshot = await mcp.callTool('take_snapshot');
+      const top = /uid=(\S+) button "Top"/.exec(snapshot.text)?.[1];
+      const frame = /uid=(\S+) button "Inside"/.exec(snapshot.text)?.[1];
+      assert(top && frame, 'snapshot contains both button uids');
+      return { top, frame };
+    }
+
+    mcpTest('runs the function in the iframe of its UID arguments', async ({ mcp }) => {
+      const { frame } = await snapshotUids(mcp);
+
+      const result = await mcp.callTool('evaluate_script', {
+        function: '(el, same) => el.id + " " + (el === same) + " " + (window !== window.top)',
+        args: [{ uid: frame }, { uid: frame }],
+      });
+
+      expect(result.isError).toBe(false);
+      expect(result.text).toContain('"frameBtn true true"');
+    });
+
+    mcpTest('rejects UID arguments from different frames', async ({ mcp }) => {
+      const { top, frame } = await snapshotUids(mcp);
+
+      const result = await mcp.callTool('evaluate_script', {
+        function: '(a, b) => a === b',
+        args: [{ uid: top }, { uid: frame }],
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.text).toContain('different frame');
+    });
+  });
+
   mcpTest('reports an unknown UID', async ({ mcp }) => {
     await mcp.callTool('take_snapshot');
     const result = await mcp.callTool('evaluate_script', {

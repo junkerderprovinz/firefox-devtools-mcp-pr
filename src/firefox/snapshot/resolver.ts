@@ -13,20 +13,7 @@ import { logDebug } from '../../utils/logger.js';
 const RESOLVE_SCRIPT = '(el) => window.__resolveUid ? window.__resolveUid(el) : null';
 const SELECTOR_SCRIPT = '(el) => window.__uidToSelector ? window.__uidToSelector(el) : null';
 const CLEAR_SCRIPT = 'if (window.__clearUidRegistry) { window.__clearUidRegistry(); }';
-// Index of each frame on the way from the top window down to the element, in document order like
-// the children of a browsing context tree.
-const FRAME_PATH_SCRIPT = `(uid) => {
-  const el = window.__resolveUid ? window.__resolveUid(uid) : null;
-  const path = [];
-  for (let win = el?.ownerDocument.defaultView; win && win !== window; win = win.parent) {
-    let index = 0;
-    while (win.parent[index] !== win) {
-      index++;
-    }
-    path.unshift(index);
-  }
-  return path;
-}`;
+const WINDOW_SCRIPT = '(uid) => window.__resolveUid?.(uid)?.ownerDocument.defaultView ?? null';
 
 export interface ResolvedElement {
   /** Browsing context of the document that holds the element */
@@ -104,25 +91,16 @@ export class UidResolver {
     uid: string
   ): Promise<ResolvedElement> {
     const element = await this.resolveUidToElement(context, uid);
-    const path = await this.bidi.callFunction<number[]>(
+    const win = await this.bidi.callFunctionRaw(
       context,
-      FRAME_PATH_SCRIPT,
+      WINDOW_SCRIPT,
       [nativeToLocalValue(uid)],
       SNAPSHOT_MANAGER_SANDBOX
     );
-    if (path.length === 0) {
-      return { context, element };
-    }
-
-    const { contexts } = await this.bidi.sendCommand('browsingContext.getTree', { root: context });
-    let info: BrowsingContext.Info | undefined = contexts[0];
-    for (const index of path) {
-      info = info?.children?.[index];
-    }
-    if (!info) {
+    if (win?.type !== 'window') {
       throw new Error(notFoundMessage(uid));
     }
-    return { context: info.context, element };
+    return { context: win.value.context, element };
   }
 }
 

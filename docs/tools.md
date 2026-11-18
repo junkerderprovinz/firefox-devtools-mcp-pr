@@ -586,7 +586,7 @@ Run a JS function in the page and return its result. Prefer this for targeted re
 Parameters:
 
 - `function` (string, required) - JS function string, e.g. () => document.title
-- `args` (array of object, optional) - UIDs to pass as function arguments
+- `args` (array of object, optional) - UIDs to pass as function arguments, all from the same frame. With UIDs from an iframe, the function runs in that iframe.
 - `timeout` (number, optional) - Timeout in ms (default: 5000)
 - `sandbox` (string, optional) - Evaluate in an isolated sandbox realm with this name instead of the page realm. The sandbox shares the page DOM and keeps the native built-ins even where the page overrode them. Page-defined globals and expandos are invisible from the sandbox, and vice-versa. The same name reuses the same sandbox across calls; omit to evaluate in the page realm.
 - `saveTo` (boolean | string, optional) - Save the result to a file as JSON instead of returning it inline. Pass a file path, an existing directory (generated file inside), or true (generated file under ~/.firefox-mcp/output/). Relative paths resolve against the current working directory.

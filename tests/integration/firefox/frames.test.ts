@@ -9,7 +9,7 @@ import { createTestFirefox, closeFirefox, findNodeInSnapshot } from '../../helpe
 import type { FirefoxClient } from '@/firefox/index.js';
 
 const PAGES: Record<string, string> = {
-  '/': '<h1>Top</h1><iframe id=frame src=/frame style="margin-top:200px"></iframe>',
+  '/': '<h1 id=title>Top</h1><iframe id=frame src=/frame style="margin-top:200px"></iframe>',
   '/frame':
     '<input id=inner><button id=innerBtn onclick="out.textContent = inner.value">Go</button>' +
     '<output id=out></output>' +
@@ -86,5 +86,13 @@ describe('UID input in iframes', () => {
     await firefox.pressKey('x', await uidOf('inner'));
 
     expect(await frameValue('getElementById("inner").value')).toBe('x');
+  }, 20000);
+
+  it('should refuse to drag between elements in different frames', async () => {
+    await openPage();
+
+    await expect(
+      firefox.dragByUidToUid(await uidOf('innerBtn'), await uidOf('title'))
+    ).rejects.toThrow(/different frames/);
   }, 20000);
 });

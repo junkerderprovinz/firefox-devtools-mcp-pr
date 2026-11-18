@@ -3,7 +3,7 @@
  */
 
 import type { FirefoxLaunchOptions, ConsoleMessage, LogpointResult } from './types.js';
-import type { Browser, BrowsingContext, Network, Script } from 'webdriver-bidi-protocol';
+import type { Browser, BrowsingContext, Network } from 'webdriver-bidi-protocol';
 import { FirefoxCore } from './core.js';
 import { BiDiFacade, type FirefoxExtension } from './bidi.js';
 import { listExtensions, type ListExtensionsFilters } from './webextension.js';
@@ -20,6 +20,7 @@ import { DomInteractions } from './dom.js';
 import { PageManagement } from './pages.js';
 import { CacheManagement, type CacheBehavior } from './cache.js';
 import { SnapshotManager, type Snapshot, type SnapshotOptions } from './snapshot/index.js';
+import type { ResolvedElement } from './snapshot/resolver.js';
 
 /**
  * Main Firefox Client facade
@@ -470,8 +471,8 @@ export class FirefoxClient {
     return await this.getSnapshot().resolveUidToSelector(this.getContext(), uid);
   }
 
-  async resolveUidToElement(uid: string): Promise<Script.SharedReference> {
-    return await this.getSnapshot().resolveUidToElement(this.getContext(), uid);
+  async resolveUidToContextElement(uid: string): Promise<ResolvedElement> {
+    return await this.getSnapshot().resolveUidToContextElement(this.getContext(), uid);
   }
 
   async clearSnapshot(): Promise<void> {

@@ -380,6 +380,9 @@ export class DomInteractions {
       this.resolveUid(context, fromUid),
       this.resolveUid(context, toUid),
     ]);
+    if (source.context !== target.context) {
+      throw new Error(`Cannot drag ${fromUid} to ${toUid}: the elements are in different frames`);
+    }
     // Use JS drag events fallback for compatibility (Actions DnD not used)
     await this.bidi.callFunction(
       source.context,

@@ -3,7 +3,7 @@
  * Handles snapshot creation using bundled injected script
  */
 
-import { BrowsingContext, Script } from 'webdriver-bidi-protocol';
+import { BrowsingContext } from 'webdriver-bidi-protocol';
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -169,16 +169,6 @@ export class SnapshotManager {
     uid: string
   ): Promise<string> {
     return await this.resolver.resolveUidToSelector(context, uid);
-  }
-
-  /**
-   * Resolve UID to the WebElement it was assigned to
-   */
-  async resolveUidToElement(
-    context: BrowsingContext.BrowsingContext,
-    uid: string
-  ): Promise<Script.SharedReference> {
-    return await this.resolver.resolveUidToElement(context, uid);
   }
 
   /**
