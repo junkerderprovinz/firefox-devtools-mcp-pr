@@ -3,7 +3,7 @@
  */
 
 import type { AriaAttributes, ComputedProperties } from '../types.js';
-import { isFocusable, isInteractive } from './elementCollector.js';
+import { getFlatTreeChildNodes, isFocusable, isInteractive } from './elementCollector.js';
 
 /**
  * Max text length
@@ -59,9 +59,8 @@ export function getElementName(el: Element): string | undefined {
  */
 export function getTextContent(el: Element): string | undefined {
   let text = '';
-  for (let i = 0; i < el.childNodes.length; i++) {
-    const node = el.childNodes[i];
-    if (node?.nodeType === Node.TEXT_NODE) {
+  for (const node of getFlatTreeChildNodes(el)) {
+    if (node.nodeType === Node.TEXT_NODE) {
       text += node.textContent || '';
     }
   }

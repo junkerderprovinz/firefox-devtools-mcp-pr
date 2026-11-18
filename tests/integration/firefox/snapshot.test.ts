@@ -235,13 +235,7 @@ describe('Snapshot Integration Tests', () => {
   }, 10000);
 
   describe('shadow DOM', () => {
-    const SHADOW_PAGE =
-      'data:text/html,<x-box id=open></x-box><x-box id=hidden style="display:none"></x-box>' +
-      '<output id=out></output><script>customElements.define("x-box", class extends HTMLElement {' +
-      ' connectedCallback() { const root = this.attachShadow({ mode: "open" });' +
-      ' root.innerHTML = "<input id=deep><button id=deepBtn>Deep</button>";' +
-      ' root.getElementById("deepBtn").onclick = () =>' +
-      ' { out.textContent = this.id + ":" + root.getElementById("deep").value; }; } });</script>';
+    const SHADOW_PAGE = fixtureUrl('shadow-dom.html');
 
     function shadowNode(snapshot: { json: { root: SnapshotNode } }, id: string) {
       return findNodeInSnapshot(snapshot.json.root, (node) => node.id === id);
@@ -276,15 +270,7 @@ describe('Snapshot Integration Tests', () => {
     }, 10000);
 
     describe('slots', () => {
-      const SLOT_PAGE =
-        'data:text/html,<x-card id=filled><button id=slotted slot=action>Slotted</button>' +
-        '<button id=stray slot=nowhere>Stray</button>' +
-        '<button id=covered slot=covered>Covered</button></x-card><x-card id=empty></x-card>' +
-        '<script>customElements.define("x-card", class extends' +
-        ' HTMLElement { connectedCallback() { this.attachShadow({ mode: "open" }).innerHTML =' +
-        ' "<nav id=" + this.id + "Bar><slot name=action><button id=" + this.id + "Fallback>' +
-        'Fallback</button></slot></nav><div style=display:none><slot name=covered></slot></div>";' +
-        ' } });</script>';
+      const SLOT_PAGE = fixtureUrl('shadow-slots.html');
 
       function hasNode(snapshot: { json: { root: SnapshotNode } }, id: string) {
         return findNodesInSnapshot(snapshot.json.root, (node) => node.id === id).length > 0;
@@ -323,6 +309,22 @@ describe('Snapshot Integration Tests', () => {
         const snapshot = await firefox.takeSnapshot({ includeAll: true });
 
         expect(hasNode(snapshot, 'covered')).toBe(false);
+      }, 10000);
+
+      it('should take text from the nodes a slot shows', async () => {
+        await firefox.navigate(SLOT_PAGE);
+
+        for (const includeAll of [false, true]) {
+          const snapshot = await firefox.takeSnapshot({ includeAll });
+
+          const texts = findNodesInSnapshot(shadowNode(snapshot, 'texts')!, (node) => !!node.text);
+          expect(texts.map((node) => `${node.tag}:${node.text}`)).toEqual([
+            'button:Save',
+            'button:Fallback',
+            'button:Forwarded',
+            'p:Note',
+          ]);
+        }
       }, 10000);
     });
   });

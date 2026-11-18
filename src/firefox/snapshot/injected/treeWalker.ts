@@ -3,7 +3,7 @@
  */
 
 import type { SnapshotNode } from '../types.js';
-import { isRelevant, isVisible } from './elementCollector.js';
+import { getFlatTreeChildren, isRelevant, isVisible } from './elementCollector.js';
 import {
   getElementName,
   getTextContent,
@@ -49,24 +49,6 @@ export interface TreeWalkerResult {
 interface WalkResult {
   node: SnapshotNode | null;
   relevantChildren: SnapshotNode[];
-}
-
-/**
- * Children of an element in the flat tree, which is what gets rendered: a shadow host shows its
- * shadow root, and a slot shows its assigned nodes or, if there are none, its fallback content.
- */
-function flatTreeChildren(el: Element): ArrayLike<Element> {
-  if (el.shadowRoot) {
-    return el.shadowRoot.children;
-  }
-  if (el.localName === 'slot') {
-    const nodes = (el as HTMLSlotElement).assignedNodes({ flatten: true });
-    // A slot outside a shadow tree has no flattened nodes and renders its children as usual
-    if (nodes.length > 0) {
-      return nodes.filter((node): node is Element => node.nodeType === Node.ELEMENT_NODE);
-    }
-  }
-  return el.children;
 }
 
 /**
@@ -133,7 +115,7 @@ export function walkTree(
       }
     } else {
       // Walk regular children
-      const children = flatTreeChildren(el);
+      const children = getFlatTreeChildren(el);
       for (let i = 0; i < children.length; i++) {
         if (nodeCount >= MAX_NODES) {
           truncated = true;

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Shadow DOM Slots Test Page</title>
+</head>
+<body>
+    <x-card id="filled">
+        <button id="slotted" slot="action">Slotted</button>
+        <button id="stray" slot="nowhere">Stray</button>
+        <button id="covered" slot="covered">Covered</button>
+    </x-card>
+    <x-card id="empty"></x-card>
+
+    <section id="texts"><my-button>Save</my-button><my-button></my-button><x-forward>Forwarded</x-forward><x-note>Note</x-note></section>
+
+    <script>
+        function define(name, render) {
+            customElements.define(name, class extends HTMLElement {
+                connectedCallback() {
+                    this.attachShadow({ mode: 'open' }).innerHTML = render(this);
+                }
+            });
+        }
+
+        define('x-card', (host) =>
+            `<nav id="${host.id}Bar"><slot name="action"><button id="${host.id}Fallback">Fallback</button></slot></nav>` +
+            '<div style="display: none"><slot name="covered"></slot></div>');
+        define('my-button', () => '<button><slot>Fallback</slot></button>');
+        define('x-forward', () => '<my-button><slot></slot></my-button>');
+        define('x-note', () => '<p><slot></slot></p>');
+    </script>
+</body>
+</html>

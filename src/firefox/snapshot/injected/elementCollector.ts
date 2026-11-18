@@ -71,13 +71,44 @@ export function isVisible(el: Element): boolean {
 }
 
 /**
+ * Child nodes of an element in the flat tree, which is what gets rendered: a shadow host shows its
+ * shadow root, and a slot shows its assigned nodes or, if there are none, its fallback content.
+ * Slots are display: contents by default, so their nodes take their place.
+ */
+export function getFlatTreeChildNodes(el: Element): Node[] {
+  const nodes: Node[] = [];
+  const addNodes = (childNodes: ArrayLike<Node>) => {
+    for (let i = 0; i < childNodes.length; i++) {
+      const node = childNodes[i]!;
+      // A slot outside a shadow tree is an ordinary element that renders its children
+      if ((node as Element).localName !== 'slot' || !(node.getRootNode() as ShadowRoot).host) {
+        nodes.push(node);
+      } else if (window.getComputedStyle(node as Element).display !== 'none') {
+        const assigned = (node as HTMLSlotElement).assignedNodes();
+        addNodes(assigned.length > 0 ? assigned : node.childNodes);
+      }
+    }
+  };
+  addNodes((el.shadowRoot ?? el).childNodes);
+  return nodes;
+}
+
+/**
+ * Child elements of an element in the flat tree
+ */
+export function getFlatTreeChildren(el: Element): Element[] {
+  return getFlatTreeChildNodes(el).filter(
+    (node): node is Element => node.nodeType === Node.ELEMENT_NODE
+  );
+}
+
+/**
  * Get direct text content (not including descendants)
  */
 function getDirectTextContent(el: Element): string {
   let text = '';
-  for (let i = 0; i < el.childNodes.length; i++) {
-    const node = el.childNodes[i];
-    if (node?.nodeType === Node.TEXT_NODE) {
+  for (const node of getFlatTreeChildNodes(el)) {
+    if (node.nodeType === Node.TEXT_NODE) {
       text += node.textContent || '';
     }
   }
@@ -88,13 +119,10 @@ function getDirectTextContent(el: Element): string {
  * Check if element has interactive descendants
  */
 function hasInteractiveDescendant(el: Element): boolean {
-  for (let i = 0; i < el.children.length; i++) {
-    const child = el.children[i];
-    if (child) {
-      const tag = child.tagName.toLowerCase();
-      if (INTERACTIVE_TAGS.indexOf(tag) !== -1 || child.hasAttribute('role')) {
-        return true;
-      }
+  for (const child of getFlatTreeChildren(el)) {
+    const tag = child.tagName.toLowerCase();
+    if (INTERACTIVE_TAGS.indexOf(tag) !== -1 || child.hasAttribute('role')) {
+      return true;
     }
   }
   return false;

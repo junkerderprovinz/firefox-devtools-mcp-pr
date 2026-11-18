@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Shadow DOM Test Page</title>
+</head>
+<body>
+    <x-box id="open"></x-box>
+    <x-box id="hidden" style="display: none"></x-box>
+    <output id="out"></output>
+
+    <script>
+        customElements.define('x-box', class extends HTMLElement {
+            connectedCallback() {
+                const root = this.attachShadow({ mode: 'open' });
+                root.innerHTML = '<input id="deep"><button id="deepBtn">Deep</button>';
+                root.getElementById('deepBtn').onclick = () => {
+                    out.textContent = this.id + ':' + root.getElementById('deep').value;
+                };
+            }
+        });
+    </script>
+</body>
+</html>
