@@ -96,6 +96,36 @@ describe('fill_by_uid Integration Tests', () => {
       expect(await firefox.evaluate('document.getElementById("s").value')).toBe('2');
     }, 20000);
 
+    it('should match the label of an option instead of its text', async () => {
+      await firefox.navigate(
+        'data:text/html,<select id=l><option value=1>Red</option><option value=2 label=Green>G</option></select>'
+      );
+
+      await firefox.fillByUid(await uidOf('l'), 'Green');
+
+      expect(await firefox.evaluate('document.getElementById("l").value')).toBe('2');
+    }, 20000);
+
+    it('should reject a disabled option', async () => {
+      await firefox.navigate(
+        'data:text/html,<select id=s><option value=1>Red</option><option value=2 disabled>Green</option></select>'
+      );
+      const uid = await uidOf('s');
+
+      await expect(firefox.fillByUid(uid, 'Green')).rejects.toThrow(/"Green" is disabled/);
+      expect(await firefox.evaluate('document.getElementById("s").value')).toBe('1');
+    }, 20000);
+
+    it('should reject a disabled select', async () => {
+      await firefox.navigate(
+        'data:text/html,<select id=s disabled><option value=1>Red</option><option value=2>Green</option></select>'
+      );
+      const uid = await uidOf('s');
+
+      await expect(firefox.fillByUid(uid, 'Green')).rejects.toThrow(/is disabled/);
+      expect(await firefox.evaluate('document.getElementById("s").value')).toBe('1');
+    }, 20000);
+
     it('should fire a change event like a user selection does', async () => {
       await firefox.navigate(SELECT_PAGE);
 

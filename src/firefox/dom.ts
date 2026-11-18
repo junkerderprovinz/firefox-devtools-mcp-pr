@@ -285,18 +285,26 @@ export class DomInteractions {
     el: Script.SharedReference,
     value: string
   ): Promise<boolean> {
-    const unmatched = await this.bidi.callFunction<string[] | null>(
+    // :disabled also covers a select in a disabled fieldset and an option in a disabled optgroup.
+    const error = await this.bidi.callFunction<string | null>(
       context,
       `
       (el, value) => {
         if (el.nodeName !== 'SELECT') {
           return null;
         }
+        if (el.matches(':disabled')) {
+          return 'is disabled';
+        }
         const options = [...el.options];
         const option =
-          options.find((o) => o.value === value) ?? options.find((o) => o.text.trim() === value);
+          options.find((o) => o.value === value) ?? options.find((o) => o.label.trim() === value);
         if (!option) {
-          return options.map((o) => o.text.trim());
+          const labels = options.map((o) => o.label.trim()).join(', ');
+          return 'has no option "' + value + '". Options: ' + labels;
+        }
+        if (option.matches(':disabled')) {
+          return 'option "' + value + '" is disabled';
         }
         if (options.some((o) => o.selected !== (o === option))) {
           for (const o of options) {
@@ -305,16 +313,16 @@ export class DomInteractions {
           el.dispatchEvent(new Event('input', { bubbles: true }));
           el.dispatchEvent(new Event('change', { bubbles: true }));
         }
-        return [];
+        return '';
       }
       `,
       [el, nativeToLocalValue(value)]
     );
-    if (unmatched === null) {
+    if (error === null) {
       return false;
     }
-    if (unmatched.length > 0) {
-      throw new Error(`${uid} has no option "${value}". Options: ${unmatched.join(', ')}`);
+    if (error) {
+      throw new Error(`${uid} ${error}`);
     }
     return true;
   }

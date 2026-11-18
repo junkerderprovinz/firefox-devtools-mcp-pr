@@ -201,7 +201,7 @@ Fill text input/textarea or pick a select option by UID.
 Parameters:
 
 - `uid` (string, required) - Input element UID from snapshot
-- `value` (string, required) - Text to fill
+- `value` (string, required) - Text to fill, or the value or visible text of the option to select
 
 ### `drag_by_uid_to_uid`
 

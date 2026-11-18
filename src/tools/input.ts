@@ -64,7 +64,7 @@ export const fillByUidTool = {
       },
       value: {
         type: 'string',
-        description: 'Text to fill',
+        description: 'Text to fill, or the value or visible text of the option to select',
       },
     },
     required: ['uid', 'value'],
